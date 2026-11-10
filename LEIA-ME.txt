@@ -1,0 +1,8 @@
+PASSO A PASSO (Windows / PowerShell no terminal do VS Code)
+1) python -m venv venv
+2) venv\Scripts\activate          (Mac/Linux: source venv/bin/activate)
+3) pip install -r requirements.txt
+4) python executar.py schema.sql
+5) python executar.py inclusoes.sql
+6) python app.py
+7) Abra http://127.0.0.1:5000 no navegador
