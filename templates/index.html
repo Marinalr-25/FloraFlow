@@ -1,0 +1,80 @@
+{% extends "base.html" %} {% block conteudo %}
+<h1>
+  Olá, bem-vindo(a) à floricultura FloraFlow!<br />Aqui cada flor conta uma
+  história. Vamos cuidar do seu jardim hoje?
+</h1>
+
+<section class="atalhos">
+  <a class="cartao" href="{{ url_for('clientes') }}">
+    <span class="icone">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
+      </svg>
+    </span>
+    <strong>Clientes ›</strong><small>Cadastro e contatos</small>
+  </a>
+
+  <a class="cartao" href="{{ url_for('flores') }}">
+    <span class="icone">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="2.5" />
+        <circle cx="12" cy="5.5" r="3" />
+        <circle cx="18.5" cy="12" r="3" />
+        <circle cx="12" cy="18.5" r="3" />
+        <circle cx="5.5" cy="12" r="3" />
+      </svg>
+    </span>
+    <strong>Flores ›</strong><small>Estoque e preços</small>
+  </a>
+
+  <a class="cartao" href="{{ url_for('pedidos') }}">
+    <span class="icone">
+      <svg viewBox="0 0 24 24">
+        <path d="M5 8h14l-1 12H6L5 8z" />
+        <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+      </svg>
+    </span>
+    <strong>Pedidos ›</strong><small>Vendas do dia</small>
+  </a>
+
+  <a class="cartao" href="{{ url_for('relatorios') }}">
+    <span class="icone">
+      <svg viewBox="0 0 24 24">
+        <path d="M4 20h16" />
+        <path d="M7 20v-7M12 20V6M17 20v-10" />
+      </svg>
+    </span>
+    <strong>Relatórios ›</strong><small>Resumo da loja</small>
+  </a>
+</section>
+
+<h2>Suas flores em destaque</h2>
+<section class="grade">
+  {% for f in flores %}
+  <div class="cartao">
+    {% if f.foto %}<img
+      class="clicavel"
+      src="{{ url_for('static', filename='uploads/' ~ f.foto) }}"
+      alt="{{ f.nome }}"
+      data-nome="{{ f.nome }}"
+      data-descricao="{{ f.descricao or '' }}"
+      onclick="abrirFoto(this)"
+    />
+    {% else %}
+    <div class="sem-foto">🌷</div>
+    {% endif %}
+    <strong>{{ f.nome }}</strong>
+    <small
+      >R$ {{ '%.2f'|format(f.preco)|replace('.', ',') }} - {{ f.unidade
+      }}</small
+    >
+  </div>
+  {% else %}
+  <p>
+    Nenhuma flor cadastrada ainda.
+    <a href="{{ url_for('flor_nova') }}">Cadastrar flor</a>
+  </p>
+  {% endfor %}
+</section>
+{% endblock %}

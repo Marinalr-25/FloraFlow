@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block titulo %}FloraFlow{% endblock %}</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
+    <aside class="menu">
+      <div class="marca"><span class="logo">🌸</span> FloraFlow</div>
+      <nav>
+        <a
+          href="{{ url_for('index') }}"
+          class="{{ 'ativo' if ativo == 'inicio' }}"
+          >Início</a
+        >
+        <a
+          href="{{ url_for('clientes') }}"
+          class="{{ 'ativo' if ativo == 'clientes' }}"
+          >Clientes</a
+        >
+        <a
+          href="{{ url_for('flores') }}"
+          class="{{ 'ativo' if ativo == 'flores' }}"
+          >Flores</a
+        >
+        <a
+          href="{{ url_for('pedidos') }}"
+          class="{{ 'ativo' if ativo == 'pedidos' }}"
+          >Pedidos</a
+        >
+        <a
+          href="{{ url_for('relatorios') }}"
+          class="{{ 'ativo' if ativo == 'relatorios' }}"
+          >Relatórios</a
+        >
+      </nav>
+    </aside>
+    <main class="conteudo">
+      {% with msgs = get_flashed_messages() %} {% for m in msgs %}
+      <div class="aviso">{{ m }}</div>
+      {% endfor %} {% endwith %} {% block conteudo %}{% endblock %}
+    </main>
+    <dialog id="modal-foto" class="modal-foto">
+      <img id="foto-grande" alt="" />
+      <div class="legenda">
+        <h3 id="foto-nome"></h3>
+        <p id="foto-descricao"></p>
+        <button type="button" class="btn-claro" onclick="modalFoto.close()">
+          Fechar
+        </button>
+      </div>
+    </dialog>
+    <script>
+      const modalFoto = document.getElementById('modal-foto');
+
+      function abrirFoto(img) {
+        document.getElementById('foto-grande').src = img.src;
+        document.getElementById('foto-nome').textContent = img.dataset.nome;
+        document.getElementById('foto-descricao').textContent =
+          img.dataset.descricao;
+        modalFoto.showModal();
+      }
+
+      // clicar fora da janela também fecha
+      modalFoto.addEventListener('click', (e) => {
+        if (e.target === modalFoto) modalFoto.close();
+      });
+    </script>
+  </body>
+</html>
