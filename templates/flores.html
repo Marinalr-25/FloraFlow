@@ -1,0 +1,89 @@
+{% extends "base.html" %} {% block conteudo %}
+<div class="topo">
+  <h1>Minhas flores</h1>
+  <a class="btn" href="{{ url_for('flor_nova') }}">+ Nova flor</a>
+</div>
+<div class="filtros">
+  <a class="chip {{ 'ativo' if not categoria }}" href="{{ url_for('flores') }}"
+    >Todas</a
+  >
+  {% for c in categorias %}
+  <a
+    class="chip {{ 'ativo' if categoria == c.categoria }}"
+    href="{{ url_for('flores', categoria=c.categoria) }}"
+    >{{ c.categoria }}</a
+  >
+  {% endfor %}
+</div>
+<table class="tabela">
+  <tr>
+    <th>Flor</th>
+    <th>Categoria</th>
+    <th>Descrição</th>
+    <th>Preço</th>
+    <th>Estoque</th>
+    <th>Ações</th>
+  </tr>
+  {% for f in flores %}
+  <tr>
+    <td class="flor-nome">
+      {% if f.foto %}<img
+        class="clicavel"
+        src="{{ url_for('static', filename='uploads/' ~ f.foto) }}"
+        alt="{{ f.nome }}"
+        data-nome="{{ f.nome }}"
+        data-descricao="{{ f.descricao or '' }}"
+        onclick="abrirFoto(this)"
+      />{% else %}<span class="mini">🌷</span>{% endif %}
+    </td>
+    <td>{{ f.categoria }}</td>
+    <td>{{ f.descricao }}</td>
+    <td>R$ {{ '%.2f'|format(f.preco)|replace('.', ',') }}</td>
+    <td>{{ f.estoque }}</td>
+    <td class="acoes">
+      <a class="btn-mini" href="{{ url_for('flor_editar', id=f.id) }}"
+        >Editar</a
+      >
+      <button
+        class="btn-mini perigo"
+        onclick="abrirModal({{ f.id }}, '{{ f.nome|e }}')"
+      >
+        Excluir
+      </button>
+    </td>
+  </tr>
+  {% else %}
+  <tr>
+    <td colspan="6">Nenhuma flor cadastrada.</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<dialog id="modal">
+  <h3 id="modal-titulo"></h3>
+  <p>Essa ação não pode ser desfeita.</p>
+  <form method="post" id="modal-form" class="botoes">
+    <button type="button" class="btn-claro" onclick="modal.close()">
+      Cancelar
+    </button>
+    <button class="btn perigo">Excluir</button>
+  </form>
+</dialog>
+
+<script>
+  const modal = document.getElementById('modal');
+  function abrirModal(id, nome) {
+    document.getElementById('modal-titulo').textContent =
+      'Excluir ' + nome + '?';
+    document.getElementById('modal-form').action = '/flores/' + id + '/excluir';
+    modal.showModal();
+
+    function abrirFoto(img) {
+      document.getElementById('foto-grande').src = img.src;
+      document.getElementById('foto-nome').textContent = img.dataset.nome;
+      document.getElementById('foto-descricao').textContent =
+        img.dataset.descricao;
+    }
+  }
+</script>
+{% endblock %}

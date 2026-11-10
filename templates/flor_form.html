@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>{{ 'Editar flor' if flor else 'Adicionar nova flor' }}</h1>
+<form class="formulario flor" method="post" enctype="multipart/form-data">
+  <label class="foto">
+    <img id="previa" src="{{ url_for('static', filename='uploads/' ~ flor.foto) if flor and flor.foto else '' }}" alt="" {{ '' if flor and flor.foto else 'hidden' }}>
+    <span id="texto-foto" {{ 'hidden' if flor and flor.foto }}>+<br>Adicionar foto</span>
+    <input type="file" id="arquivo-foto" name="foto" accept="image/*" hidden>
+  </label>
+  <div class="campos">
+    <label>Nome da flor <input name="nome" required value="{{ flor.nome if flor }}"></label>
+    <div class="duas">
+      <label>Categoria <input name="categoria" placeholder="Rosa, orquídea..." value="{{ flor.categoria if flor }}"></label>
+      <label>Preço <input name="preco" placeholder="R$ 00,00" required value="{{ flor.preco if flor }}"></label>
+    </div>
+    <div class="duas">
+      <label>Estoque <input type="number" name="estoque" min="0" value="{{ flor.estoque if flor else 0 }}"></label>
+      <label>Unidade
+        <select name="unidade">
+          {% for u in ['Haste','Vaso','Maço'] %}<option {{ 'selected' if flor and flor.unidade == u }}>{{ u }}</option>{% endfor %}
+        </select></label>
+    </div>
+    <label>Descrição <input name="descricao" value="{{ flor.descricao if flor }}"></label>
+    <fieldset><legend>Cor</legend>
+      {% for cor, hex in [('vermelho','#9b0000'),('rosa','#f2a6c4'),('branco','#ffffff'),('amarelo','#f4c95d'),('lilás','#b79ced')] %}
+      <label class="cor"><input type="radio" name="cor" value="{{ cor }}" {{ 'checked' if flor and flor.cor == cor }}><span style="background:{{ hex }}" title="{{ cor }}"></span></label>
+      {% endfor %}
+    </fieldset>
+  </div>
+  <div class="botoes">
+    <a class="btn-claro" href="{{ url_for('flores') }}">Cancelar</a>
+    <button class="btn">Cadastrar flor</button>
+  </div>
+</form>
+<script>
+  // mostra a foto escolhida antes de cadastrar
+  document.getElementById('arquivo-foto').addEventListener('change', e => {
+    const arq = e.target.files[0];
+    if (!arq) return;
+    const previa = document.getElementById('previa');
+    previa.src = URL.createObjectURL(arq);
+    previa.hidden = false;
+    document.getElementById('texto-foto').hidden = true;
+  });
+</script>
+{% endblock %}
