@@ -1,0 +1,77 @@
+{% extends "base.html" %} {% block conteudo %}
+<h1>{{ 'Editar cliente' if cliente else 'Cadastro de novo cliente' }}</h1>
+<form class="formulario" method="post">
+  <label
+    >Nome completo
+    <input name="nome" required value="{{ cliente.nome if cliente }}"
+  /></label>
+  <div class="duas">
+    <label
+      >Telefone
+      <input
+        type="tel"
+        name="telefone"
+        id="telefone"
+        placeholder="(00) 00000-0000"
+        required
+        maxlength="15"
+        pattern="\(\d{2}\) 9\d{4}-\d{4}"
+        title="Use DDD + 9 dígitos, ex.: (11) 91234-5678"
+        value="{{ cliente.telefone if cliente }}"
+    /></label>
+    <label
+      >E-mail
+      <input
+        type="email"
+        name="email"
+        placeholder="nome@email.com"
+        pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+        title="Digite um e-mail válido, ex.: nome@email.com"
+        value="{{ cliente.email if cliente }}"
+    /></label>
+  </div>
+  <label
+    >Endereço <input name="endereco" value="{{ cliente.endereco if cliente }}"
+  /></label>
+  <div class="duas">
+    <label
+      >Aniversário
+      <input
+        name="aniversario"
+        id="aniversario"
+        placeholder="dd/mm"
+        maxlength="5"
+        inputmode="numeric"
+        pattern="(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])"
+        title="Use dia/mês, por exemplo 15/03"
+        value="{{ cliente.aniversario if cliente }}"
+    /></label>
+    <label
+      >Observações
+      <input
+        name="observacoes"
+        placeholder="Ex.: prefere rosas"
+        value="{{ cliente.observacoes if cliente }}"
+    /></label>
+  </div>
+  <div class="botoes">
+    <a class="btn-claro" href="{{ url_for('clientes') }}">Cancelar</a>
+    <button class="btn">Salvar cliente</button>
+  </div>
+</form>
+<script>
+  // aceita só números e coloca a "/" sozinho: 1503 -> 15/03
+  document.getElementById('aniversario').addEventListener('input', (e) => {
+    const d = e.target.value.replace(/\D/g, '').slice(0, 4);
+    e.target.value = d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d;
+  });
+  // só números, formata como (11) 91234-5678
+  document.getElementById('telefone').addEventListener('input', (e) => {
+    const d = e.target.value.replace(/\D/g, '').slice(0, 11);
+    let t = d;
+    if (d.length > 6) t = `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+    else if (d.length > 2) t = `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    e.target.value = t;
+  });
+</script>
+{% endblock %}
