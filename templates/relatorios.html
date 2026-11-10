@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Resumo da loja</h1>
+<section class="atalhos">
+  <div class="cartao"><strong>{{ r.clientes }}</strong><small>Clientes</small></div>
+  <div class="cartao"><strong>{{ r.flores }}</strong><small>Tipos de flor</small></div>
+  <div class="cartao"><strong>{{ r.pedidos }}</strong><small>Pedidos</small></div>
+  <div class="cartao"><strong>R$ {{ '%.2f'|format(r.faturamento)|replace('.', ',') }}</strong><small>Faturamento</small></div>
+</section>
+<h2>Estoque baixo (menos de 20)</h2>
+<table class="tabela">
+  <tr><th>Flor</th><th>Estoque</th></tr>
+  {% for f in r.baixo_estoque %}<tr><td>{{ f.nome }}</td><td>{{ f.estoque }}</td></tr>
+  {% else %}<tr><td colspan="2">Tudo em dia.</td></tr>{% endfor %}
+</table>
+{% endblock %}

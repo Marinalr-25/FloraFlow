@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Pedidos</h1>
+
+<form class="formulario" method="post" id="form-pedido">
+  <label>Cliente
+    <select name="cliente_id" required>
+      {% for c in clientes %}<option value="{{ c.id }}">{{ c.nome }}</option>{% endfor %}
+    </select>
+  </label>
+  {% if not clientes %}<p>Cadastre um cliente antes de registrar pedidos.</p>{% endif %}
+
+  <div id="itens"></div>
+  <div><button type="button" class="btn-claro" id="add-item">+ Adicionar flor</button></div>
+  <div class="total">Total: R$ <span id="total">0,00</span></div>
+  <div class="botoes"><button class="btn">Registrar pedido</button></div>
+</form>
+
+<template id="modelo-item">
+  <div class="item-linha">
+    <label>Flor
+      <select name="flor_id" required>
+        {% for f in flores %}
+        <option value="{{ f.id }}" data-preco="{{ f.preco }}" {{ 'disabled' if f.estoque < 1 }}>
+          {{ f.nome }} - R$ {{ '%.2f'|format(f.preco)|replace('.', ',') }} (estoque {{ f.estoque }})
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Quantidade <input type="number" name="quantidade" min="1" value="1" required></label>
+    <button type="button" class="btn-mini perigo remover">Remover</button>
+  </div>
+</template>
+
+<h2>Pedidos registrados</h2>
+<table class="tabela">
+  <tr><th>Nº</th><th>Cliente</th><th>Flores</th><th>Data</th><th>Total</th></tr>
+  {% for p in pedidos %}
+  <tr>
+    <td>{{ p.id }}</td><td>{{ p.cliente }}</td><td>{{ p.itens }}</td><td>{{ p.data }}</td>
+    <td>R$ {{ '%.2f'|format(p.total)|replace('.', ',') }}</td>
+  </tr>
+  {% else %}<tr><td colspan="5">Nenhum pedido ainda.</td></tr>{% endfor %}
+</table>
+
+<script>
+  const itens = document.getElementById('itens');
+  const modelo = document.getElementById('modelo-item');
+
+  function adicionar() {
+    itens.appendChild(modelo.content.cloneNode(true));
+    recalcular();
+  }
+
+  function recalcular() {
+    let total = 0;
+    itens.querySelectorAll('.item-linha').forEach(linha => {
+      const opcao = linha.querySelector('select').selectedOptions[0];
+      const qtd = parseInt(linha.querySelector('input').value) || 0;
+      if (opcao) total += parseFloat(opcao.dataset.preco) * qtd;
+    });
+    document.getElementById('total').textContent = total.toFixed(2).replace('.', ',');
+  }
+
+  document.getElementById('add-item').addEventListener('click', adicionar);
+  itens.addEventListener('input', recalcular);
+  itens.addEventListener('change', recalcular);
+  itens.addEventListener('click', e => {
+    if (e.target.classList.contains('remover') && itens.children.length > 1) {
+      e.target.closest('.item-linha').remove();
+      recalcular();
+    }
+  });
+  adicionar();   // começa com uma linha
+</script>
+{% endblock %}
