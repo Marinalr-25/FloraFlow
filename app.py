@@ -3,10 +3,19 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from werkzeug.utils import secure_filename
 import db_sql as db
 import re
+import click
 
 app = Flask(__name__)
 app.secret_key = "floricultura-chave-secreta"   # necessária para flash()
 app.config["UPLOAD_FOLDER"] = os.path.join("static", "uploads")
+
+# ---------- COMANDO: flask init-db ----------
+@app.cli.command("init-db")
+@click.option("--dados", is_flag=True, help="Também carrega os dados de exemplo (inclusoes.sql).")
+def init_db_comando(dados):
+    """Cria as tabelas lendo o schema.sql."""
+    db.inicializar_banco(com_dados=dados)
+    click.echo("Banco criado com sucesso!" + (" Dados de exemplo carregados." if dados else ""))
 
 
 def salvar_foto(arquivo):
@@ -122,7 +131,7 @@ def pedidos():
             flash(str(erro))
         return redirect(url_for("pedidos"))
     return render_template("pedidos.html", pedidos=db.listar_pedidos(),
-                           clientes=db.listar_clientes(), flores=db.listar_flores(), ativo="pedidos")
+                          clientes=db.listar_clientes(), flores=db.listar_flores(), ativo="pedidos")
 
 
 # ---------- RELATÓRIOS ----------

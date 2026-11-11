@@ -1,29 +1,51 @@
 """Funções de acesso ao banco (CRUD)."""
+import os
 import sqlite3
 
-BANCO = "floricultura.db"
+PASTA = os.path.dirname(os.path.abspath(__file__))
+BANCO = os.path.join(PASTA, "floricultura.db")
+
+# o app.py usa este nome para tratar erros de regra do banco (UNIQUE, CHECK...)
+ErroIntegridade = sqlite3.IntegrityError
 
 
 def conectar():
     conn = sqlite3.connect(BANCO)
     conn.row_factory = sqlite3.Row   # permite usar linha['nome']
+    conn.execute("PRAGMA foreign_keys = ON")   # sem isso o SQLite NÃO confere chaves estrangeiras
     return conn
+
+
+def inicializar_banco(com_dados=False):
+    """Lê o schema.sql (e, se pedido, o inclusoes.sql) e executa no banco."""
+    arquivos = ["schema.sql"] + (["inclusoes.sql"] if com_dados else [])
+    conn = conectar()
+    for nome in arquivos:
+        with open(os.path.join(PASTA, nome), encoding="utf-8") as f:
+            conn.executescript(f.read())
+    conn.commit()
+    conn.close()
 
 
 def consultar(sql, params=()):
     conn = conectar()
-    linhas = conn.execute(sql, params).fetchall()
-    conn.close()
-    return linhas
+    try:
+        return conn.execute(sql, params).fetchall()
+    finally:
+        conn.close()
 
 
 def executar(sql, params=()):
     conn = conectar()
-    cur = conn.execute(sql, params)
-    conn.commit()
-    novo_id = cur.lastrowid
-    conn.close()
-    return novo_id
+    try:
+        cur = conn.execute(sql, params)
+        conn.commit()
+        return cur.lastrowid
+    except Exception:
+        conn.rollback()   # desfaz se o banco recusar (UNIQUE, CHECK...)
+        raise
+    finally:
+        conn.close()      # sempre fecha a conexão, mesmo com erro
 
 
 # ---------- FLORES ----------
@@ -78,12 +100,18 @@ def excluir_cliente(id):
     executar("DELETE FROM clientes WHERE id = ?", (id,))
 
 
+def email_em_uso(email, ignorar_id=0):
+    return bool(consultar("SELECT 1 FROM clientes WHERE email = ? AND id <> ?", (email, ignorar_id)))
+
+
 # ---------- PEDIDOS ----------
 def listar_pedidos():
+    # LEFT JOIN: o pedido aparece mesmo que o cliente ou a flor tenham sido apagados
     return consultar(
-        "SELECT p.id, c.nome AS cliente, p.data, p.total, "
-        "GROUP_CONCAT(i.quantidade || 'x ' || f.nome, ', ') AS itens "
-        "FROM pedidos p JOIN clientes c ON c.id = p.cliente_id "
+        "SELECT p.id, COALESCE(c.nome, 'Cliente removido') AS cliente, p.data, p.total, "
+        "GROUP_CONCAT(i.quantidade || 'x ' || COALESCE(f.nome, 'flor removida'), ', ') AS itens "
+        "FROM pedidos p "
+        "LEFT JOIN clientes c ON c.id = p.cliente_id "
         "LEFT JOIN itens_pedido i ON i.pedido_id = p.id "
         "LEFT JOIN flores f ON f.id = i.flor_id "
         "GROUP BY p.id ORDER BY p.id DESC")
