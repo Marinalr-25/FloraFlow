@@ -15,3 +15,12 @@ INSERT INTO clientes (nome, telefone, email, endereco, aniversario, observacoes)
 
 INSERT INTO pedidos (cliente_id, data, total) VALUES (1, date('now'), 26.70) ;
 INSERT INTO itens_pedido (pedido_id, flor_id, quantidade, preco_unitario) VALUES (1, 1, 3, 8.90);
+
+UPDATE flores SET foto = 'rosa_vermelha.jpeg'    WHERE nome = 'Rosa vermelha';
+UPDATE flores SET foto = 'orquidea_branca.jpeg'  WHERE nome = 'Orquídea branca';
+UPDATE flores SET foto = 'lirio.jpeg'            WHERE nome = 'Lírio';
+UPDATE flores SET foto = 'girassol.jpeg'         WHERE nome = 'Girassol';
+UPDATE flores SET foto = 'lavanda.jpeg'          WHERE nome = 'Lavanda';
+UPDATE flores SET foto = 'peonia.jpeg'           WHERE nome = 'Peônia';
+UPDATE flores SET foto = 'tulipas.jpeg'          WHERE nome = 'Tulipas';
+UPDATE flores SET foto = 'astromelia.jpeg'       WHERE nome = 'Astromélia';
