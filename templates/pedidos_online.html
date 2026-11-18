@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block titulo %}Pedidos Online · FloraFlow{% endblock %}
+{% block conteudo %}
+<div class="topo">
+  <h1>Pedidos Online ›</h1>
+  <a class="btn" href="{{ url_for('pedido_online_novo') }}">+ Registrar pedido</a>
+</div>
+
+<div class="barra-kanban">
+  <form class="busca-kanban" method="get">
+    <input name="q" placeholder="Buscar pedido ou cliente" value="{{ q }}">
+    <input type="hidden" name="periodo" value="{{ periodo }}">
+  </form>
+  <div class="filtros">
+    {% for chave, nome in [('todos', 'Todos'), ('hoje', 'Hoje'), ('semana', 'Semana')] %}
+    <a class="chip {{ 'ativo' if periodo == chave }}" href="{{ url_for('pedidos_online', periodo=chave, q=q) }}">{{ nome }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="kanban" id="kanban">
+  {% for status, lista in colunas.items() %}
+  <section class="coluna" data-status="{{ status }}">
+    <header>
+      <span class="pilula {{ classes[status] }}">{{ status }}</span>
+      <span class="contagem">{{ lista|length }}</span>
+    </header>
+    <div class="lista">
+      {% for p in lista %}
+      <article class="card-pedido" draggable="true" data-id="{{ p.id }}" data-href="{{ url_for('pedido_online_detalhe', id=p.id) }}">
+        <div class="linha"><strong>{{ p.cliente }}</strong><span class="num">#{{ p.id }}</span></div>
+        <div class="selos">
+          <span class="selo {{ 'entrega' if p.tipo == 'Entrega' else 'retirada' }}">{{ p.tipo }}</span>
+          {% if p.pago %}<span class="selo pago">Pago</span>{% endif %}
+        </div>
+        <div class="itens">{{ p.itens }}</div>
+        <div class="linha rodape"><small>{{ p.data_entrega|rotulo_data(p.horario) }}</small><span class="valor">{{ p.total|brl }}</span></div>
+      </article>
+      {% endfor %}
+    </div>
+    <a class="adicionar" href="{{ url_for('pedido_online_novo', status=status) }}">+ Adicionar</a>
+  </section>
+  {% endfor %}
+</div>
+
+<script>
+  const kanban = document.getElementById('kanban');
+  const colunas = [...kanban.querySelectorAll('.coluna')];
+  let arrastado = null;
+
+  function atualizarContagens() {
+    colunas.forEach((col) => {
+      col.querySelector('.contagem').textContent = col.querySelectorAll('.card-pedido').length;
+    });
+  }
+
+  kanban.addEventListener('dragstart', (e) => {
+    const card = e.target.closest('.card-pedido');
+    if (!card) return;
+    arrastado = card;
+    card.classList.add('movendo');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', card.dataset.id);
+  });
+
+  kanban.addEventListener('dragend', () => {
+    if (arrastado) arrastado.classList.remove('movendo');
+    arrastado = null;
+    colunas.forEach((c) => c.classList.remove('sobre'));
+  });
+
+  colunas.forEach((col) => {
+    col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('sobre'); });
+    col.addEventListener('dragleave', (e) => { if (!col.contains(e.relatedTarget)) col.classList.remove('sobre'); });
+    col.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      col.classList.remove('sobre');
+      const card = arrastado;
+      if (!card || card.closest('.coluna') === col) return;
+
+      col.querySelector('.lista').prepend(card);
+      // "Pago" aparece a partir da coluna Aceito / Pago
+      const pago = colunas.indexOf(col) >= 1;
+      const selos = card.querySelector('.selos');
+      const selo = selos.querySelector('.pago');
+      if (pago && !selo) selos.insertAdjacentHTML('beforeend', '<span class="selo pago">Pago</span>');
+      if (!pago && selo) selo.remove();
+      atualizarContagens();
+
+      const dados = new FormData();
+      dados.append('status', col.dataset.status);
+      const resp = await fetch(`/pedidos-online/${card.dataset.id}/status`, { method: 'POST', body: dados });
+      if (!resp.ok) {
+        const erro = await resp.json().catch(() => ({}));
+        alert(erro.erro || 'Não foi possível mover o pedido.');
+        location.reload();
+      }
+    });
+  });
+
+  // clicar no card abre os detalhes
+  kanban.addEventListener('click', (e) => {
+    const card = e.target.closest('.card-pedido');
+    if (card) location.href = card.dataset.href;
+  });
+</script>
+{% endblock %}

@@ -34,6 +34,11 @@
           >Pedidos</a
         >
         <a
+          href="{{ url_for('pedidos_online') }}"
+          class="{{ 'ativo' if ativo == 'pedidos_online' }}"
+          >Pedidos Online</a
+        >
+        <a
           href="{{ url_for('relatorios') }}"
           class="{{ 'ativo' if ativo == 'relatorios' }}"
           >Relatórios</a

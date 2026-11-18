@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block titulo %}Pedido #{{ p.id }} · FloraFlow{% endblock %}
+{% block conteudo %}
+{% set entrega = p.tipo == 'Entrega' %}
+{% set finalizado = p.status == 'Finalizado' %}
+
+<div class="detalhe-topo">
+  <a class="voltar" href="{{ url_for('pedidos_online') }}" title="Voltar">←</a>
+  <h1>Pedido <span class="num-roxo">#{{ p.id }}</span> ›</h1>
+  <div class="topo-acoes">
+    <span class="pilula {{ classe }}">{{ p.status }}</span>
+    {% if proximo %}
+    <form method="post" action="{{ url_for('pedido_online_avancar', id=p.id) }}">
+      <button class="btn">Avançar para {{ proximo }}</button>
+    </form>
+    {% endif %}
+    <button type="button" class="btn-claro" onclick="window.print()">Imprimir</button>
+  </div>
+</div>
+
+<form method="post" action="{{ url_for('pedido_online_atualizar', id=p.id) }}" enctype="multipart/form-data" class="detalhe-grade">
+  <div class="detalhe-col">
+    <section class="painel">
+      <div class="linha">
+        <div>
+          <small>Andamento do pedido</small>
+          <h2 class="nome-cliente">{{ p.cliente }}</h2>
+          <small>Feito {{ p.criado_em[:10]|dia_rel }} às {{ p.criado_em[11:16] }}
+            {%- if finalizado and finalizado_em %} · {{ 'Entrega realizada' if entrega else 'Retirada realizada' }} às {{ finalizado_em }}{% endif %}</small>
+        </div>
+        <label class="mini-campo">Florista: <input name="florista" value="{{ p.florista or '' }}" placeholder="Nome"></label>
+      </div>
+      <ol class="etapas">
+        {% for e in etapas %}<li class="{{ e.estado }}"><span class="bolinha"></span><span class="rotulo">{{ e.rotulo }}</span></li>{% endfor %}
+      </ol>
+    </section>
+
+    <section class="painel">
+      <h2>Itens do pedido</h2>
+      <table class="tabela-itens">
+        <tr><th>Item</th><th>Qtd</th><th>Preço un.</th><th>Subtotal</th></tr>
+        {% for i in itens %}
+        <tr>
+          <td class="flor-nome">
+            {% if i.foto %}<img src="{{ url_for('static', filename='uploads/' ~ i.foto) }}" alt="">{% else %}<span class="mini">🌷</span>{% endif %}
+            {{ i.nome }}
+          </td>
+          <td>{{ i.quantidade }}</td><td>{{ i.preco_unitario|brl }}</td><td>{{ i.subtotal|brl }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      <div class="linha resumo"><span>Taxa de entrega</span><span class="gratis">{{ 'Grátis' if not p.taxa_entrega else p.taxa_entrega|brl }}</span></div>
+      <div class="linha resumo total-final"><strong>Total</strong><strong class="num-roxo">{{ p.total|brl }}</strong></div>
+    </section>
+
+    <section class="painel">
+      <h2>Histórico do pedido</h2>
+      <ul class="historico">
+        {% for h in historico %}
+        <li><span class="hora">{{ h.criado_em|hora_hist }}</span><span class="ponto"></span>
+          <strong>{{ h.titulo }}</strong><small>{{ h.detalhe }}</small></li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <div class="detalhe-col">
+    <section class="painel">
+      <small>Cliente</small>
+      <h2 class="nome-cliente">{{ p.cliente }}</h2>
+      {% if p.telefone %}<p class="miudo">{{ p.telefone }}</p>{% endif %}
+      {% if p.email %}<p class="miudo">{{ p.email }}</p>{% endif %}
+      {% if p.telefone %}
+      <div class="botoes-contato">
+        <a class="btn-zap" href="https://wa.me/55{{ p.telefone|digitos }}" target="_blank" rel="noopener">WhatsApp</a>
+        <a class="btn-ligar" href="tel:{{ p.telefone|digitos }}">Ligar</a>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="painel">
+      <small>{{ 'Entrega' if entrega else 'Retirada' }}</small>
+      <h3>{{ ('Entregue' if entrega else 'Retirado') if finalizado else ('Entrega' if entrega else 'Retirada') }}
+        {{ p.data_entrega|dia_rel }}, {{ p.horario }}</h3>
+      {% if entrega %}
+      <p class="miudo">{{ p.endereco_entrega or 'Endereço não informado' }}</p>
+      <label class="mini-campo">Entregador: <input name="entregador" value="{{ p.entregador or '' }}" placeholder="Nome"></label>
+      {% else %}
+      <p class="miudo">Retirar na loja</p>
+      {% endif %}
+    </section>
+
+    <section class="painel">
+      <small>Pagamento</small>
+      <div class="linha"><h3>{{ p.pagamento }} · {{ p.total|brl }}</h3>
+        <span class="selo {{ 'pago' if p.pago else 'retirada' }}">{{ 'Pago' if p.pago else 'Pendente' }}</span></div>
+    </section>
+
+    <section class="painel">
+      <small>Mensagem do cartão</small>
+      {% if p.mensagem_cartao %}<blockquote class="citacao">{{ p.mensagem_cartao }}</blockquote>
+      {% else %}<p class="miudo">Sem mensagem.</p>{% endif %}
+    </section>
+
+    <section class="painel">
+      <small>Avaliação do cliente</small>
+      <div class="linha">
+        <div class="estrelas">
+          {% for n in [5, 4, 3, 2, 1] %}
+          <input type="radio" id="nota{{ n }}" name="nota" value="{{ n }}" {{ 'checked' if p.avaliacao_nota == n }}><label for="nota{{ n }}">★</label>
+          {% endfor %}
+        </div>
+        <strong class="nota-num">{{ ('%.1f'|format(p.avaliacao_nota))|replace('.', ',') if p.avaliacao_nota else '' }}</strong>
+      </div>
+      <input name="comentario" value="{{ p.avaliacao_comentario or '' }}" placeholder="Comentário do cliente">
+    </section>
+
+    <section class="painel">
+      <small>Comprovante de {{ 'entrega' if entrega else 'retirada' }}</small>
+      <label class="mini-campo">Recebido por: <input name="recebido_por" value="{{ p.recebido_por or '' }}" placeholder="Nome">
+        {%- if finalizado_em %} · {{ finalizado_em }}{% endif %}</label>
+      {% if p.comprovante %}
+      <img id="foto-comprovante" class="oculto" src="{{ url_for('static', filename='uploads/' ~ p.comprovante) }}"
+           alt="Comprovante" data-nome="Comprovante de {{ 'entrega' if entrega else 'retirada' }} · #{{ p.id }}" data-descricao="">
+      <a href="#" class="ver-foto" onclick="abrirFoto(document.getElementById('foto-comprovante')); return false;">Ver foto</a>
+      {% endif %}
+      <label class="mini-campo">Enviar foto: <input type="file" name="comprovante" accept="image/*"></label>
+    </section>
+
+    <button class="btn grande">Salvar detalhes</button>
+  </div>
+</form>
+{% endblock %}

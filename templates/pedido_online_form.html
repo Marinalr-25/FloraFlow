@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block titulo %}Registrar pedido · FloraFlow{% endblock %}
+{% block conteudo %}
+<h1>Registrar novo pedido ›</h1>
+
+<form method="post" class="novo-pedido" id="form-pedido">
+  <input type="hidden" name="status" value="{{ dados.status }}">
+
+  <div class="painel">
+    <label class="campo">Cliente
+      <select name="cliente_id" id="cliente" required>
+        <option value="">Selecione o cliente</option>
+        {% for c in clientes %}
+        <option value="{{ c.id }}" data-endereco="{{ c.endereco or '' }}"
+          {{ 'selected' if dados.cliente_id|string == c.id|string }}>{{ c.nome }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <div class="campo">Tipo
+      <div class="segmento">
+        {% for t in ['Entrega', 'Retirada'] %}
+        <label><input type="radio" name="tipo" value="{{ t }}" {{ 'checked' if dados.tipo == t }}><span>{{ t }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <label class="campo" id="campo-endereco">Endereço de entrega
+      <input name="endereco_entrega" id="endereco" value="{{ dados.endereco_entrega }}" placeholder="Se vazio, usa o endereço do cliente">
+    </label>
+
+    <div class="duas">
+      <label class="campo">Data <input type="date" name="data_entrega" value="{{ dados.data_entrega }}" required></label>
+      <label class="campo">Horário <input type="time" name="horario" value="{{ dados.horario }}" required></label>
+    </div>
+
+    <label class="campo">Mensagem do cartão
+      <input name="mensagem_cartao" value="{{ dados.mensagem_cartao }}" placeholder="Ex.: Feliz aniversário!">
+    </label>
+
+    <div class="campo">Pagamento
+      <div class="chips-pagamento">
+        {% for forma in ['Pix', 'Cartão', 'Dinheiro'] %}
+        <label><input type="radio" name="pagamento" value="{{ forma }}" {{ 'checked' if dados.pagamento == forma }}><span>{{ forma }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="painel">
+    <h2>Flores</h2>
+    <div class="lista-flores">
+      {% for f in flores %}
+      {% set qtd = dados.qtds.get(f.id, 0) %}
+      <div class="flor-linha {{ 'ativa' if qtd > 0 }}" data-preco="{{ f.preco }}" data-estoque="{{ f.estoque }}">
+        {% if f.foto %}<img src="{{ url_for('static', filename='uploads/' ~ f.foto) }}" alt="{{ f.nome }}">{% else %}<span class="mini">🌷</span>{% endif %}
+        <div class="flor-info"><strong>{{ f.nome }}</strong><small>{{ f.preco|brl }} · estoque {{ f.estoque }}</small></div>
+        <div class="contador">
+          <button type="button" class="menos" aria-label="Diminuir">−</button>
+          <input type="number" class="qtd" name="qtd_{{ f.id }}" value="{{ qtd }}" min="0" max="{{ f.estoque }}">
+          <button type="button" class="mais" aria-label="Aumentar">+</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="total-linha"><span>Total</span><strong id="total">R$ 0,00</strong></div>
+    <button class="btn grande">Criar pedido</button>
+  </div>
+</form>
+
+<script>
+  const form = document.getElementById('form-pedido');
+  const brl = (v) => 'R$ ' + v.toFixed(2).replace('.', ',');
+
+  function recalcular() {
+    let total = 0;
+    form.querySelectorAll('.flor-linha').forEach((linha) => {
+      const input = linha.querySelector('.qtd');
+      const qtd = parseInt(input.value) || 0;
+      total += qtd * parseFloat(linha.dataset.preco);
+      linha.classList.toggle('ativa', qtd > 0);
+    });
+    document.getElementById('total').textContent = brl(total);
+  }
+
+  form.querySelectorAll('.flor-linha').forEach((linha) => {
+    const input = linha.querySelector('.qtd');
+    const max = parseInt(linha.dataset.estoque);
+    const ajustar = (n) => { input.value = Math.max(0, Math.min(max, n)); recalcular(); };
+    linha.querySelector('.menos').addEventListener('click', () => ajustar((parseInt(input.value) || 0) - 1));
+    linha.querySelector('.mais').addEventListener('click', () => ajustar((parseInt(input.value) || 0) + 1));
+    input.addEventListener('input', () => ajustar(parseInt(input.value) || 0));
+  });
+
+  // endereço só aparece na entrega e vem do cadastro do cliente
+  const campoEndereco = document.getElementById('campo-endereco');
+  const endereco = document.getElementById('endereco');
+  const cliente = document.getElementById('cliente');
+  function mostrarEndereco() {
+    const entrega = form.querySelector('input[name=tipo]:checked').value === 'Entrega';
+    campoEndereco.style.display = entrega ? '' : 'none';
+  }
+  form.querySelectorAll('input[name=tipo]').forEach((r) => r.addEventListener('change', mostrarEndereco));
+  cliente.addEventListener('change', () => {
+    endereco.value = cliente.selectedOptions[0].dataset.endereco || '';
+  });
+  mostrarEndereco();
+  recalcular();
+</script>
+{% endblock %}
